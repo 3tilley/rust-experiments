@@ -1,0 +1,34 @@
+# Clipboard
+#if [[ "$OSTYPE" == "msys" ]]; then
+    #v = /dev/clipboard
+#elif [[ "$OSTYPE" == "linux" ]]; then
+    ## TODO
+    #v = /dev/clipboard
+#fi
+
+v () {
+    cat /dev/clipboard
+}
+
+
+#cdg () {
+    #local target_dir=$CDG
+#
+    #if [[ $# -ne 0 ]]; then
+        #target_dir="${target_dir}/${1}"
+    #fi
+    #
+    #if [[ -d "$target_dir" ]]; then
+        #cd "$target_dir"
+    #else
+        #echo "Unrecognised dir: $target_dir"
+    #fi
+#}
+
+#rg() {
+#    if [[ -t 1 ]]; then
+#        command rg -p "$@" | less -RFX
+#    else
+#        command rg "$@"
+#    fi
+#}
