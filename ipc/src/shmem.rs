@@ -1,6 +1,7 @@
 use shared_memory::{Shmem, ShmemConf};
 use std::process::{Child, Command};
-use std::time::Instant;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 use raw_sync::Timeout;
 use raw_sync::events::{BusyEvent, EventImpl, EventInit, EventState};
 use crate::ExecutionResult;
@@ -97,6 +98,9 @@ impl ShmemRunner {
         } else {
             None
         };
+        // Clumsy sleep here but it allows the child proc to spawn without it having to offer
+        // us a ready event
+        sleep(Duration::from_secs(1));
         ShmemRunner {
             child_proc,
             wrapper,

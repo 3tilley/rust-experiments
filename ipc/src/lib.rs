@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 
 pub mod shmem;
 pub mod pipes;
+pub mod tcp;
+pub mod udp;
 
 pub struct ExecutionResult {
     name: String,

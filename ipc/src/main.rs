@@ -2,6 +2,8 @@ use ipc::shmem::ShmemRunner;
 use clap::Parser;
 use ipc::pipes::PipeRunner;
 use std::io::{Read, Write};
+use ipc::tcp::TcpRunner;
+use ipc::udp::UdpRunner;
 
 fn main() {
     let args = Cli::parse();
@@ -12,6 +14,14 @@ fn main() {
         }
         Method::Shmem => {
             let mut runner = ShmemRunner::new(args.start_child);
+            runner.run(args.number, true);
+        }
+        Method::Tcp => {
+            let mut runner = TcpRunner::new(args.start_child, true);
+            runner.run(args.number, true);
+        }
+        Method::Udp => {
+            let mut runner = UdpRunner::new(true);
             runner.run(args.number, true);
         }
     }
@@ -27,6 +37,8 @@ enum Method {
     #[default]
     Stdout,
     Shmem,
+    Tcp,
+    Udp,
 }
 
 #[derive(Parser, Debug)]

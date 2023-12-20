@@ -1,5 +1,6 @@
 use divan::Bencher;
 use std::hint::black_box;
+use ipc::tcp::TcpRunner;
 
 fn main() {
     divan::main();
@@ -41,15 +42,55 @@ fn stdin_stdout_1000(bencher: Bencher) {
 }
 
 #[divan::bench]
-fn shared_memory_1000(bencher: Bencher) {
+fn shared_memory_10000(bencher: Bencher) {
     // println!("Starting proc");
     let mut shmem_runner = ipc::shmem::ShmemRunner::new(true);
     // println!("Preparing");
     bencher
-        .counter(divan::counter::ItemsCount::new(1000usize))
+        .counter(divan::counter::ItemsCount::new(10000usize))
         .bench_local(move || {
             // println!("Starting run");
-            shmem_runner.run(1000);
+            shmem_runner.run(10000, false);
+        });
+}
+
+#[divan::bench]
+fn tcp_1000_nodelay(bencher: Bencher) {
+    let n = 1000usize;
+    // println!("Starting proc");
+    let mut tcp_runner = ipc::tcp::TcpRunner::new(true, true);
+    // println!("Preparing");
+    bencher
+        .counter(divan::counter::ItemsCount::new(n))
+        .bench_local(move || {
+            // println!("Starting run");
+            tcp_runner.run(n, false);
+        });
+}
+
+#[divan::bench]
+fn tcp_1000_yesdelay(bencher: Bencher) {
+    let n = 1000usize;
+    // println!("Starting proc");
+    let mut tcp_runner = ipc::tcp::TcpRunner::new(true, false);
+    // println!("Preparing");
+    bencher
+        .counter(divan::counter::ItemsCount::new(n))
+        .bench_local(move || {
+            // println!("Starting run");
+            tcp_runner.run(n, false);
+        });
+}
+
+#[divan::bench]
+fn udp_1000(bencher: Bencher) {
+    let n = 1000usize;
+    let mut udp_runner = ipc::udp::UdpRunner::new(true);
+    bencher
+        .counter(divan::counter::ItemsCount::new(n))
+        .bench_local(move || {
+            // println!("Starting run");
+            udp_runner.run(n, false);
         });
 }
 
