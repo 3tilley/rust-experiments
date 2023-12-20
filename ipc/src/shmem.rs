@@ -130,7 +130,7 @@ impl ShmemRunner {
         let elapsed = instant.elapsed();
 
         if print {
-            let res = ExecutionResult::new("Shared memory".to_string(), instant, elapsed, 1000);
+            let res = ExecutionResult::new("Shared memory".to_string(), instant, elapsed, n);
             res.print_info();
         }
     }
