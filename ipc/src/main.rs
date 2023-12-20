@@ -1,15 +1,22 @@
 use std::io::{Read, Write};
 use clap::Parser;
 use lib::PipeRunner;
+use crate::lib::ShmemRunner;
 
 mod lib;
 
 fn main() {
     let args = Cli::parse();
-    let mut pr = PipeRunner::new(false);
-    pr.run(args.number);
-    let mut pr2 = PipeRunner::new(false);
-    pr2.run(args.number);
+    match args.method {
+        Method::Stdout => {
+            let mut pr = PipeRunner::new(false);
+            pr.run(args.number);
+        },
+        Method::Shmem => {
+            let mut runner = ShmemRunner::new();
+            runner.run(10);
+        }
+    }
 }
 
 // #[divan::bench]
@@ -17,12 +24,18 @@ fn main() {
 //
 // }
 
+#[derive(Debug, Default, Copy, Clone, clap::ValueEnum)]
 enum Method {
+    #[default]
     Stdout,
+    Shmem,
 }
 
 #[derive(Parser, Debug)]
 struct Cli {
     #[arg(short, long)]
     number: usize,
+
+    #[clap(short, long, default_value_t, value_enum)]
+    method: Method,
 }

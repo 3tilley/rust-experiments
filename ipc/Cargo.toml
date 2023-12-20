@@ -9,6 +9,8 @@ edition = "2021"
 clap = { version = "4.4.11", features = ["derive"] }
 divan = "0.1.7"
 humantime = "2.1.0"
+raw_sync = "0.1.5"
+shared_memory = "0.12.4"
 
 [dev-dependencies]
 divan = "0.1.7"
