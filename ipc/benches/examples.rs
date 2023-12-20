@@ -1,5 +1,5 @@
-use std::hint::black_box;
 use divan::Bencher;
+use std::hint::black_box;
 
 fn main() {
     divan::main();
@@ -7,15 +7,13 @@ fn main() {
 }
 
 // #[divan::bench(threads=1)]
-#[divan::bench(sample_size=1)]
-fn stdin_stdout_1000(bencher: Bencher) {
-    let mut pipe_runner = ipc::PipeRunner::new(false);
+#[divan::bench(sample_size = 1)]
+fn stdin_stdout_full_1000(bencher: Bencher) {
+    let mut pipe_runner = ipc::pipes::PipeRunner::new(false);
     bencher
         // .with_inputs()
         .counter(divan::counter::ItemsCount::new(1000usize))
-        .bench_local(move || {
-        pipe_runner.run(1)
-    });
+        .bench_local(move || pipe_runner.run(1, false));
 }
 
 // // #[divan::bench]
@@ -29,16 +27,30 @@ fn stdin_stdout_1000(bencher: Bencher) {
 // }
 //
 #[divan::bench]
-fn stdin_stdout_inner_1000(bencher: Bencher) {
+fn stdin_stdout_1000(bencher: Bencher) {
     // println!("Starting proc");
-    let mut pipe_runner = ipc::PipeRunner::new(false);
+    let mut pipe_runner = ipc::pipes::PipeRunner::new(false);
     // println!("Preparing");
     let mut return_buffer = pipe_runner.prepare();
-    bencher.counter(divan::counter::ItemsCount::new(1000usize))
+    bencher
+        .counter(divan::counter::ItemsCount::new(1000usize))
         .bench_local(move || {
-        // println!("Starting run");
-        pipe_runner.run_inner(1000, &mut return_buffer)
-    });
+            // println!("Starting run");
+            pipe_runner.run_inner(1000, &mut return_buffer)
+        });
+}
+
+#[divan::bench]
+fn shared_memory_1000(bencher: Bencher) {
+    // println!("Starting proc");
+    let mut shmem_runner = ipc::shmem::ShmemRunner::new(true);
+    // println!("Preparing");
+    bencher
+        .counter(divan::counter::ItemsCount::new(1000usize))
+        .bench_local(move || {
+            // println!("Starting run");
+            shmem_runner.run(1000);
+        });
 }
 
 #[divan::bench]

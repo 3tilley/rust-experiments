@@ -1,20 +1,18 @@
-use std::io::{Read, Write};
+use ipc::shmem::ShmemRunner;
 use clap::Parser;
-use lib::PipeRunner;
-use crate::lib::ShmemRunner;
-
-mod lib;
+use ipc::pipes::PipeRunner;
+use std::io::{Read, Write};
 
 fn main() {
     let args = Cli::parse();
     match args.method {
         Method::Stdout => {
             let mut pr = PipeRunner::new(false);
-            pr.run(args.number);
-        },
+            pr.run(args.number, true);
+        }
         Method::Shmem => {
             let mut runner = ShmemRunner::new(args.start_child);
-            runner.run(10);
+            runner.run(args.number, true);
         }
     }
 }
@@ -41,5 +39,4 @@ struct Cli {
 
     #[arg(short, long, action)]
     start_child: bool,
-
 }
