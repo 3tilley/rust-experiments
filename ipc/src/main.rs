@@ -13,7 +13,7 @@ fn main() {
             pr.run(args.number);
         },
         Method::Shmem => {
-            let mut runner = ShmemRunner::new();
+            let mut runner = ShmemRunner::new(args.start_child);
             runner.run(10);
         }
     }
@@ -38,4 +38,8 @@ struct Cli {
 
     #[clap(short, long, default_value_t, value_enum)]
     method: Method,
+
+    #[arg(short, long, action)]
+    start_child: bool,
+
 }

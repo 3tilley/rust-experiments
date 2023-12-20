@@ -2,8 +2,6 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::time::{Duration, Instant};
 use std::path::PathBuf;
 use std::io::{Read, stdin, Write};
-use std::os::windows::io::AsRawHandle;
-use std::os::windows::process::CommandExt;
 use raw_sync::events::{BusyEvent, EventImpl, EventInit, EventState};
 use raw_sync::Timeout;
 use shared_memory::{Shmem, ShmemConf};
@@ -103,13 +101,16 @@ pub struct ShmemRunner {
 }
 
 impl ShmemRunner {
-    pub fn new() -> ShmemRunner {
+    pub fn new(start_child: bool) -> ShmemRunner {
         let wrapper = ShmemWrapper::new(None);
 
         let id = wrapper.shmem.get_os_id();
         let exe = executable_path("shmem_consumer");
-        // let child_proc = Command::new(exe).args(&[id]).spawn().unwrap();
-        let child_proc = None;
+        let child_proc = if start_child {
+            Some(Command::new(exe).args(&[id]).spawn().unwrap())
+        } else {
+            None
+        };
         ShmemRunner { child_proc, wrapper }
     }
 
