@@ -80,3 +80,11 @@ impl TcpRunner {
         }
     }
 }
+
+impl Drop for TcpRunner {
+    fn drop(&mut self) {
+        if let Some(ref mut c) = self.child_proc {
+            c.kill().unwrap();
+        }
+    }
+}
