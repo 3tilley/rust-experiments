@@ -3,8 +3,8 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-pub mod shmem;
 pub mod pipes;
+pub mod shmem;
 pub mod tcp;
 pub mod udp;
 
@@ -27,9 +27,13 @@ impl ExecutionResult {
 
     fn print_info(&self) {
         let duration = humantime::Duration::from(self.elapsed);
-        let ps = 1_000_000f32 * (self.cycles as f32)  / (duration.as_micros() as f32);
-        let per_op = humantime::Duration::from(Duration::from_nanos((1_000_000_000f32 / ps) as u64));
-        println!("{} cycles completed in {} \n{} per second\n{} per operation", self.cycles, duration, ps, per_op);
+        let ps = 1_000_000f32 * (self.cycles as f32) / (duration.as_micros() as f32);
+        let per_op =
+            humantime::Duration::from(Duration::from_nanos((1_000_000_000f32 / ps) as u64));
+        println!(
+            "{} cycles completed in {} \n{} per second\n{} per operation",
+            self.cycles, duration, ps, per_op
+        );
     }
 }
 

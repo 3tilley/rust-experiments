@@ -2,20 +2,27 @@
 name = "ipc"
 version = "0.1.0"
 edition = "2021"
+default-run = "ipc"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "4.4.11", features = ["derive"] }
-divan = "0.1.7"
+#divan = "0.1.14"
 humantime = "2.1.0"
 portpicker = "0.1.1"
 raw_sync = "0.1.5"
 shared_memory = "0.12.4"
 
-[dev-dependencies]
-divan = "0.1.7"
+#[dev-dependencies]
+divan = {version="0.1.7", optional=true}
+divan-dev = {path = "../../divan", optional=true, package = "divan"}
 
 [[bench]]
 name = "examples"
 harness = false
+
+[features]
+dev-divan = ["dep:divan-dev"]
+prod-divan = ["dep:divan"]
+default = ["prod-divan"]

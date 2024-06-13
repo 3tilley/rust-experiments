@@ -1,8 +1,8 @@
-use std::io::{Read, Write};
-use std::str::FromStr;
 use raw_sync::events::EventInit;
 use raw_sync::Timeout;
 use shared_memory::{Shmem, ShmemConf};
+use std::io::{Read, Write};
+use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
 

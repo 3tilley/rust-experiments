@@ -5,7 +5,6 @@ fn main() {
     loop {
         let read_result = stdin().read_exact(&mut arr);
         if read_result.is_ok() {
-            // eprintln!("Got input '{:?}' (length {})", arr, arr.len() );
             let output = match &arr {
                 b"ping\n" => b"pong\n",
                 b"pong\n" => b"ping\n",

@@ -1,10 +1,10 @@
+use crate::ExecutionResult;
+use raw_sync::events::{BusyEvent, EventImpl, EventInit, EventState};
+use raw_sync::Timeout;
 use shared_memory::{Shmem, ShmemConf};
 use std::process::{Child, Command};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use raw_sync::Timeout;
-use raw_sync::events::{BusyEvent, EventImpl, EventInit, EventState};
-use crate::ExecutionResult;
 
 fn shmem_conf() -> ShmemConf {
     let shmem = ShmemConf::new().size(8);
@@ -22,18 +22,18 @@ pub struct ShmemWrapper {
 impl ShmemWrapper {
     pub fn new(handle: Option<String>) -> ShmemWrapper {
         let owner = handle.is_none();
-        let (mut shmem, this_event_index) = match handle {
-            None => (shmem_conf().create().unwrap(), 0),
-            Some(h) => (
-                shmem_conf()
-                    .os_id(&h)
-                    .open()
-                    .expect(&format!("Unable to open the shared memory at {}", h)),
-                1,
-            ),
+        // If we've been given a memory handle, attach it, if not, create one
+        let mut shmem = match handle {
+            None => shmem_conf().create().unwrap(),
+            Some(h) => shmem_conf()
+                .os_id(&h)
+                .open()
+                .expect(&format!("Unable to open the shared memory at {}", h)),
         };
         let mut bytes = unsafe { shmem.as_slice_mut() };
-        let ((our_event, bytes_ours), (their_event, bytes_theirs)) = unsafe {
+        // The two events are locks - one for each side. Each side activates the lock while it's
+        // writing, and then unlocks when the data can be read
+        let ((our_event, lock_bytes_ours), (their_event, lock_bytes_theirs)) = unsafe {
             if owner {
                 (
                     BusyEvent::new(bytes.get_mut(0).unwrap(), true).unwrap(),
@@ -41,13 +41,15 @@ impl ShmemWrapper {
                 )
             } else {
                 (
+                    // If we're not the owner, the events have been created already
                     BusyEvent::from_existing(bytes.get_mut(2).unwrap()).unwrap(),
                     BusyEvent::from_existing(bytes.get_mut(0).unwrap()).unwrap(),
                 )
             }
         };
-        assert!(bytes_ours <= 2);
-        assert!(bytes_theirs <= 2);
+        // Confirm that we've correctly indexed two bytes for each lock
+        assert!(lock_bytes_ours <= 2);
+        assert!(lock_bytes_theirs <= 2);
         if owner {
             our_event.set(EventState::Clear).unwrap();
             their_event.set(EventState::Clear).unwrap();
@@ -94,13 +96,14 @@ impl ShmemRunner {
         let id = wrapper.shmem.get_os_id();
         let exe = crate::executable_path("shmem_consumer");
         let child_proc = if start_child {
-            Some(Command::new(exe).args(&[id]).spawn().unwrap())
+            let res = Some(Command::new(exe).args(&[id]).spawn().unwrap());
+            // Clumsy sleep here but it allows the child proc to spawn without it having to offer
+            // us a ready event
+            sleep(Duration::from_secs(1));
+            res
         } else {
             None
         };
-        // Clumsy sleep here but it allows the child proc to spawn without it having to offer
-        // us a ready event
-        sleep(Duration::from_secs(1));
         ShmemRunner {
             child_proc,
             wrapper,
@@ -110,21 +113,15 @@ impl ShmemRunner {
     pub fn run(&mut self, n: usize, print: bool) {
         let instant = Instant::now();
         for _ in 0..n {
-            // unsafe {
-            //     eprintln!("Prod data: {:?}", self.wrapper.shmem.as_slice());
-            // }
-            // eprintln!("Prod: Freezing sync");
+            // Activate our lock in preparation for writing
             self.wrapper.signal_start();
-            // eprintln!("Prod: Writing data");
             self.wrapper.write(b"ping");
-            // eprintln!("Prod: Releasing sync");
+            // Unlock after writing
             self.wrapper.signal_finished();
-            // unsafe { eprintln!("Prod data: {:?}", self.wrapper.shmem.as_slice()); }
             unsafe {
+                // Wait for their lock to be released so we can read
                 if self.wrapper.their_event.wait(Timeout::Infinite).is_ok() {
-                    // eprintln!("Prod: received event");
                     let str = self.wrapper.read();
-                    // eprintln!("Prod: received data: {:?}", str);
                     if str != b"pong" {
                         panic!("Sent ping didn't get pong")
                     }

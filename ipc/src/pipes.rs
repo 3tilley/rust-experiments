@@ -1,7 +1,7 @@
+use crate::ExecutionResult;
+use std::io::{Read, Write};
 use std::process::{Child, Command, Stdio};
 use std::time::Instant;
-use std::io::{Read, Write};
-use crate::ExecutionResult;
 
 pub struct PipeRunner {
     pub pipe_proc: Child,

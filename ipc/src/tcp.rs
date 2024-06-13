@@ -1,8 +1,8 @@
+use crate::ExecutionResult;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process::{Child, Command};
 use std::time::Instant;
-use crate::ExecutionResult;
 
 pub struct TcpStreamWrapper {
     pub port: u16,
@@ -14,7 +14,11 @@ impl TcpStreamWrapper {
     pub fn from_port(port: u16, tcp_nodelay: bool) -> Self {
         let stream = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
         stream.set_nodelay(tcp_nodelay).unwrap();
-        Self { port, stream, server: false}
+        Self {
+            port,
+            stream,
+            server: false,
+        }
     }
 
     pub fn from_listener(tcp_listener: TcpListener, tcp_nodelay: bool) -> TcpStreamWrapper {
@@ -27,7 +31,6 @@ impl TcpStreamWrapper {
             stream,
         }
     }
-
 }
 
 pub struct TcpRunner {
@@ -42,12 +45,21 @@ impl TcpRunner {
         let port = listener.local_addr().unwrap().port();
         let exe = crate::executable_path("tcp_consumer");
         let child_proc = if start_child {
-            Some(Command::new(exe).args(&[port.to_string(), tcp_nodelay.to_string()]).spawn().unwrap())
+            Some(
+                Command::new(exe)
+                    .args(&[port.to_string(), tcp_nodelay.to_string()])
+                    .spawn()
+                    .unwrap(),
+            )
         } else {
             None
         };
         let stream = TcpStreamWrapper::from_listener(listener, tcp_nodelay);
-        Self { child_proc, wrapper: stream, tcp_nodelay }
+        Self {
+            child_proc,
+            wrapper: stream,
+            tcp_nodelay,
+        }
     }
 
     pub fn run(&mut self, n: usize, print: bool) {

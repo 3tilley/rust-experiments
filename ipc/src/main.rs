@@ -1,9 +1,9 @@
-use ipc::shmem::ShmemRunner;
 use clap::Parser;
 use ipc::pipes::PipeRunner;
-use std::io::{Read, Write};
+use ipc::shmem::ShmemRunner;
 use ipc::tcp::TcpRunner;
 use ipc::udp::UdpRunner;
+use std::io::{Read, Write};
 
 fn main() {
     let args = Cli::parse();
@@ -27,11 +27,6 @@ fn main() {
     }
 }
 
-// #[divan::bench]
-// pub fn pipe_n(n: usize) {
-//
-// }
-
 #[derive(Debug, Default, Copy, Clone, clap::ValueEnum)]
 enum Method {
     #[default]
@@ -49,6 +44,6 @@ struct Cli {
     #[clap(short, long, default_value_t, value_enum)]
     method: Method,
 
-    #[arg(short, long, action)]
+    #[arg(short, long, action, default_value_t=true)]
     start_child: bool,
 }

@@ -1,9 +1,9 @@
+use crate::ExecutionResult;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream, UdpSocket};
 use std::process::{Child, Command};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use crate::ExecutionResult;
 
 pub struct UdpStreamWrapper {
     pub our_port: u16,
@@ -15,7 +15,11 @@ impl UdpStreamWrapper {
     pub fn from_port(port: u16) -> Self {
         let socket = UdpSocket::bind(format!("127.0.0.1:{}", port)).unwrap();
         let our_port = socket.local_addr().unwrap().port();
-        Self { our_port, socket, server: false}
+        Self {
+            our_port,
+            socket,
+            server: false,
+        }
     }
 
     pub fn new() -> UdpStreamWrapper {
@@ -27,7 +31,6 @@ impl UdpStreamWrapper {
             socket,
         }
     }
-
 }
 
 pub struct UdpRunner {
@@ -40,17 +43,29 @@ impl UdpRunner {
     pub fn new(start_child: bool) -> UdpRunner {
         let wrapper = UdpStreamWrapper::new();
         let their_port = portpicker::pick_unused_port().unwrap();
-        sleep(Duration::from_millis(1000));
+        // sleep(Duration::from_millis(1000));
         let exe = crate::executable_path("udp_consumer");
         let child_proc = if start_child {
-            Some(Command::new(exe).args(&[wrapper.our_port.to_string(), their_port.to_string()]).spawn().unwrap())
+            Some(
+                Command::new(exe)
+                    .args(&[wrapper.our_port.to_string(), their_port.to_string()])
+                    .spawn()
+                    .unwrap(),
+            )
         } else {
             None
         };
         // Another awkward sleep to make sure the child proc is ready
         sleep(Duration::from_millis(100));
-        wrapper.socket.connect(format!("127.0.0.1:{}", their_port)).expect("Child process can't connect");
-        Self { child_proc, wrapper, their_port }
+        wrapper
+            .socket
+            .connect(format!("127.0.0.1:{}", their_port))
+            .expect("Child process can't connect");
+        Self {
+            child_proc,
+            wrapper,
+            their_port,
+        }
     }
 
     pub fn run(&mut self, n: usize, print: bool) {
