@@ -4,6 +4,10 @@ extern crate divan_dev as divan;
 
 use divan::Bencher;
 
+// This affects the number cycles of to execute each method for. In the Divan output, the
+// time per function will be displayed for the total number of cycles, but the throughput
+// will be displayed per cycle. So to get timing per cycle, do t/N. A workaround for this
+// hopefully will be found
 const N: usize = 1000;
 
 fn main() {

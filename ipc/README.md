@@ -41,7 +41,7 @@ examples                        fastest       │ slowest       │ median      
                                 24.11 Kitem/s │ 21.62 Kitem/s │ 23.26 Kitem/s │ 23.2 Kitem/s  │         │
 ```
 
-Note, that if N != 1 in the benches file, the timing data will be for the whole run, not per cycle. However the throughput data is per cycle. This is due to how Divan handles multiple items, which I'm hoping can be improved.
+Note, that if N != 1 in the benches file, the timing data will be for the whole function, not per cycle. However the throughput data is per cycle. This is due to how Divan handles multiple items, which I'm hoping can be improved.
 
 Additionally, because the host process picks out an executable from the targets directory for the consumer, if you make changes to the consumers run `cargo build --release` to make sure they are reflected in the next execution. By
 default `cargo run` will only rebuild the `ipc` binrary, which only holds the producer code.
