@@ -16,7 +16,7 @@ shared_memory = "0.12.4"
 
 #[dev-dependencies]
 divan = {version="0.1.7", optional=true}
-divan-dev = {path = "../../divan", optional=true, package = "divan"}
+divan-dev = {git = "https://github.com/3tilley/divan", branch="fix-formatting", optional=true, package = "divan"}
 
 [[bench]]
 name = "examples"

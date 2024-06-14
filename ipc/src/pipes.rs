@@ -8,7 +8,7 @@ pub struct PipeRunner {
 }
 
 impl PipeRunner {
-    pub fn new(p0: bool) -> PipeRunner {
+    pub fn new(_p0: bool) -> PipeRunner {
         // let output_dir = PathBuf::from(env::var("CARGO_TARGET_DIR").unwrap());
         // let output_dir = PathBuf::new();
         // let exe = output_dir.join("pipes_consumer.exe");
@@ -23,10 +23,10 @@ impl PipeRunner {
     }
 
     pub fn prepare(&mut self) -> [u8; 5] {
-        let mut return_value = [0u8, 0, 0, 0, 0];
+        let return_value = [0u8, 0, 0, 0, 0];
         return_value
     }
-    pub fn run_inner(&mut self, n: usize, mut return_value: &mut [u8; 5]) {
+    pub fn run_inner(&mut self, n: usize, return_value: &mut [u8; 5]) {
         if let Some(ref mut pipes_input) = self.pipe_proc.stdin {
             if let Some(ref mut pipes_output) = self.pipe_proc.stdout {
                 for _ in 0..n {
@@ -46,7 +46,7 @@ impl PipeRunner {
         self.run_inner(n, &mut return_buffer);
         let elapsed = instant.elapsed();
         if print {
-            let res = ExecutionResult::new("Stdin/stdout".to_string(), instant, elapsed, n);
+            let res = ExecutionResult::new("Stdin/stdout".to_string(), elapsed, n);
             res.print_info()
         }
     }

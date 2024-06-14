@@ -3,14 +3,11 @@
 extern crate divan_dev as divan;
 
 use divan::Bencher;
-use ipc::tcp::TcpRunner;
-use std::hint::black_box;
 
 const N: usize = 1000;
 
 fn main() {
     divan::main();
-    // divan::Divan::from_args().run_benches();
 }
 
 // This creates the return array "holding the response" before passing it to the function

@@ -3,7 +3,6 @@ use ipc::pipes::PipeRunner;
 use ipc::shmem::ShmemRunner;
 use ipc::tcp::TcpRunner;
 use ipc::udp::UdpRunner;
-use std::io::{Read, Write};
 
 fn main() {
     let args = Cli::parse();
@@ -44,6 +43,6 @@ struct Cli {
     #[clap(short, long, default_value_t, value_enum)]
     method: Method,
 
-    #[arg(short, long, action, default_value_t=true)]
+    #[arg(short, long, action, default_value_t = true)]
     start_child: bool,
 }

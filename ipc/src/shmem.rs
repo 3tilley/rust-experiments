@@ -30,7 +30,7 @@ impl ShmemWrapper {
                 .open()
                 .expect(&format!("Unable to open the shared memory at {}", h)),
         };
-        let mut bytes = unsafe { shmem.as_slice_mut() };
+        let bytes = unsafe { shmem.as_slice_mut() };
         // The two events are locks - one for each side. Each side activates the lock while it's
         // writing, and then unlocks when the data can be read
         let ((our_event, lock_bytes_ours), (their_event, lock_bytes_theirs)) = unsafe {
@@ -71,7 +71,7 @@ impl ShmemWrapper {
     }
 
     pub fn write(&mut self, data: &[u8; 4]) {
-        let mut bytes = unsafe { self.shmem.as_slice_mut() };
+        let bytes = unsafe { self.shmem.as_slice_mut() };
 
         for i in 0..data.len() {
             bytes[i + self.data_start] = data[i];
@@ -118,20 +118,18 @@ impl ShmemRunner {
             self.wrapper.write(b"ping");
             // Unlock after writing
             self.wrapper.signal_finished();
-            unsafe {
-                // Wait for their lock to be released so we can read
-                if self.wrapper.their_event.wait(Timeout::Infinite).is_ok() {
-                    let str = self.wrapper.read();
-                    if str != b"pong" {
-                        panic!("Sent ping didn't get pong")
-                    }
+            // Wait for their lock to be released so we can read
+            if self.wrapper.their_event.wait(Timeout::Infinite).is_ok() {
+                let str = self.wrapper.read();
+                if str != b"pong" {
+                    panic!("Sent ping didn't get pong")
                 }
             }
         }
         let elapsed = instant.elapsed();
 
         if print {
-            let res = ExecutionResult::new("Shared memory".to_string(), instant, elapsed, n);
+            let res = ExecutionResult::new("Shared memory".to_string(), elapsed, n);
             res.print_info();
         }
     }
@@ -139,10 +137,8 @@ impl ShmemRunner {
 
 impl Drop for ShmemRunner {
     fn drop(&mut self) {
-        // println!("Killing subprocess");
         if let Some(ref mut child) = self.child_proc {
             child.kill().expect("Unable to kill child process")
         }
-        // stdin().
     }
 }

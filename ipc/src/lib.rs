@@ -1,7 +1,5 @@
-use raw_sync::events::{EventImpl, EventInit};
-use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 pub mod pipes;
 pub mod shmem;
@@ -10,16 +8,14 @@ pub mod udp;
 
 pub struct ExecutionResult {
     name: String,
-    start: Instant,
     elapsed: Duration,
     cycles: usize,
 }
 
 impl ExecutionResult {
-    fn new(name: String, start: Instant, elapsed: Duration, cycles: usize) -> ExecutionResult {
+    fn new(name: String, elapsed: Duration, cycles: usize) -> ExecutionResult {
         ExecutionResult {
             name,
-            start,
             elapsed,
             cycles,
         }
@@ -31,8 +27,8 @@ impl ExecutionResult {
         let per_op =
             humantime::Duration::from(Duration::from_nanos((1_000_000_000f32 / ps) as u64));
         println!(
-            "{} cycles completed in {} \n{} per second\n{} per operation",
-            self.cycles, duration, ps, per_op
+            "IPC method - {}\n\t{} cycles completed in {} \n\t{} per second\n\t{} per operation",
+            self.name, self.cycles, duration, ps, per_op
         );
     }
 }

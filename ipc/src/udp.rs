@@ -1,6 +1,6 @@
 use crate::ExecutionResult;
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream, UdpSocket};
+
+use std::net::UdpSocket;
 use std::process::{Child, Command};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -36,14 +36,12 @@ impl UdpStreamWrapper {
 pub struct UdpRunner {
     child_proc: Option<Child>,
     wrapper: UdpStreamWrapper,
-    their_port: u16,
 }
 
 impl UdpRunner {
     pub fn new(start_child: bool) -> UdpRunner {
         let wrapper = UdpStreamWrapper::new();
         let their_port = portpicker::pick_unused_port().unwrap();
-        // sleep(Duration::from_millis(1000));
         let exe = crate::executable_path("udp_consumer");
         let child_proc = if start_child {
             Some(
@@ -55,7 +53,7 @@ impl UdpRunner {
         } else {
             None
         };
-        // Another awkward sleep to make sure the child proc is ready
+        // Awkward sleep to make sure the child proc is ready
         sleep(Duration::from_millis(100));
         wrapper
             .socket
@@ -64,7 +62,6 @@ impl UdpRunner {
         Self {
             child_proc,
             wrapper,
-            their_port,
         }
     }
 
@@ -80,7 +77,7 @@ impl UdpRunner {
         }
         if print {
             let elapsed = start.elapsed();
-            let res = ExecutionResult::new("UDP".to_string(), start, elapsed, n);
+            let res = ExecutionResult::new("UDP".to_string(), elapsed, n);
             res.print_info();
         }
     }

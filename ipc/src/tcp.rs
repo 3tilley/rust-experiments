@@ -23,7 +23,7 @@ impl TcpStreamWrapper {
 
     pub fn from_listener(tcp_listener: TcpListener, tcp_nodelay: bool) -> TcpStreamWrapper {
         let addr = tcp_listener.local_addr().unwrap();
-        let (stream, socket) = tcp_listener.accept().unwrap();
+        let (stream, _socket) = tcp_listener.accept().unwrap();
         stream.set_nodelay(tcp_nodelay).unwrap();
         Self {
             port: addr.port(),
@@ -75,7 +75,11 @@ impl TcpRunner {
         }
         if print {
             let elapsed = start.elapsed();
-            let res = ExecutionResult::new("TCP".to_string(), start, elapsed, n);
+            let res = ExecutionResult::new(
+                format!("TCP - nodelay={}", self.tcp_nodelay).to_string(),
+                elapsed,
+                n,
+            );
             res.print_info();
         }
     }
