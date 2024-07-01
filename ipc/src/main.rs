@@ -1,4 +1,5 @@
 use clap::Parser;
+use ipc::iceoryx::IceoryxRunner;
 use ipc::pipes::PipeRunner;
 use ipc::shmem::ShmemRunner;
 use ipc::tcp::TcpRunner;
@@ -23,6 +24,10 @@ fn main() {
             let mut runner = UdpRunner::new(true);
             runner.run(args.number, true);
         }
+        Method::Iceoryx => {
+            let mut runner = IceoryxRunner::new(true);
+            runner.run(args.number, true);
+        }
     }
 }
 
@@ -33,6 +38,7 @@ enum Method {
     Shmem,
     Tcp,
     Udp,
+    Iceoryx,
 }
 
 #[derive(Parser, Debug)]

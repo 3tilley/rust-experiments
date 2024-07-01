@@ -5,6 +5,7 @@ pub mod pipes;
 pub mod shmem;
 pub mod tcp;
 pub mod udp;
+pub mod iceoryx;
 
 pub struct ExecutionResult {
     name: String,
