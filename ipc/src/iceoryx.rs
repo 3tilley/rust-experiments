@@ -13,16 +13,32 @@ pub struct IceoryxWrapper {
 
 impl IceoryxWrapper {
     pub fn new(is_producer: bool) -> IceoryxWrapper {
+        const PRODUCER_SEND: &'static str = "ipc/Producer/Send";
+        const CONSUMER_SEND: &'static str = "ipc/Consumer/Send";
         let (publisher, subscriber) = if is_producer {
-            let send_name = ServiceName::new("ProducerSend").unwrap();
-            let recv_name = ServiceName::new("ConsumerSend").unwrap();
+            let send_name = ServiceName::new(PRODUCER_SEND).unwrap();
+            let recv_name = ServiceName::new(CONSUMER_SEND).unwrap();
             let send_service = zero_copy::Service::new(&send_name).publish_subscribe().create().unwrap();
             let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().create().unwrap();
+
+            let services = zero_copy::Service::list().unwrap();
+            println!("\nProd - Services\n");
+            for service in services {
+                println!("\n{:#?}", &service);
+            }
+
             (send_service.publisher().create().unwrap(), recv_service.subscriber().create().unwrap())
 
         } else {
-            let send_name = ServiceName::new("ConsumerSend").unwrap();
-            let recv_name = ServiceName::new("ProducerSend").unwrap();
+            let send_name = ServiceName::new(CONSUMER_SEND).unwrap();
+            let recv_name = ServiceName::new(PRODUCER_SEND).unwrap();
+
+            let services = zero_copy::Service::list().unwrap();
+            println!("\nCon - Services\n");
+            for service in services {
+                println!("\n{:#?}", &service);
+            }
+
             let send_service = zero_copy::Service::new(&send_name).publish_subscribe().open().unwrap();
             let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().open().unwrap();
             (send_service.publisher().create().unwrap(), recv_service.subscriber().create().unwrap())
@@ -42,8 +58,9 @@ pub struct IceoryxRunner {
 
 impl IceoryxRunner {
     pub fn new(start_child: bool) -> IceoryxRunner {
-        let start_child = false;
+        // let start_child = false;
         let wrapper = IceoryxWrapper::new(true);
+        sleep(Duration::from_millis(1000));
         let exe = crate::executable_path("iceoryx_consumer");
         let child_proc = if start_child {
             Some(
@@ -55,7 +72,7 @@ impl IceoryxRunner {
             None
         };
         // Awkward sleep again to wait for consumer to be ready
-        sleep(Duration::from_millis(100));
+        sleep(Duration::from_millis(1000));
         Self {
             child_proc,
             wrapper
@@ -65,6 +82,7 @@ impl IceoryxRunner {
 
     pub fn run(&mut self, n: usize, print: bool) {
         let start = Instant::now();
+        // self.wrapper.subscriber.
         for _ in 0..n {
             let sample = self.wrapper.publisher.loan_uninit().unwrap();
             let send_payload = sample.write_payload((*b"ping").into());
