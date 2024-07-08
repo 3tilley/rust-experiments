@@ -4,49 +4,63 @@ use std::time::{Duration, Instant};
 use iceoryx2::port::publisher::Publisher;
 use iceoryx2::port::subscriber::Subscriber;
 use iceoryx2::prelude::*;
+use iceoryx2::service::port_factory::publish_subscribe::PortFactory;
 use crate::ExecutionResult;
+
 
 pub struct IceoryxWrapper {
     pub publisher: Publisher<zero_copy::Service, [u8; 4]>,
     pub subscriber: Subscriber<zero_copy::Service, [u8; 4]>,
+    pub publisher_service: PortFactory<zero_copy::Service, [u8; 4]>,
+    pub subscriber_service: PortFactory<zero_copy::Service, [u8; 4]>,
 }
 
 impl IceoryxWrapper {
     pub fn new(is_producer: bool) -> IceoryxWrapper {
         const PRODUCER_SEND: &'static str = "ipc/Producer/Send";
         const CONSUMER_SEND: &'static str = "ipc/Consumer/Send";
-        let (publisher, subscriber) = if is_producer {
+        if is_producer {
             let send_name = ServiceName::new(PRODUCER_SEND).unwrap();
             let recv_name = ServiceName::new(CONSUMER_SEND).unwrap();
-            let send_service = zero_copy::Service::new(&send_name).publish_subscribe().create().unwrap();
-            let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().create().unwrap();
+            let send_service = zero_copy::Service::new(&send_name).publish_subscribe().open().unwrap();
+            let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().open().unwrap();
 
-            let services = zero_copy::Service::list().unwrap();
-            println!("\nProd - Services\n");
-            for service in services {
-                println!("\n{:#?}", &service);
+            Self::print_services(true);
+
+            IceoryxWrapper {
+                publisher: send_service.publisher().create().unwrap(),
+                subscriber: recv_service.subscriber().create().unwrap(),
+                publisher_service: send_service,
+                subscriber_service: recv_service,
             }
 
-            (send_service.publisher().create().unwrap(), recv_service.subscriber().create().unwrap())
 
         } else {
             let send_name = ServiceName::new(CONSUMER_SEND).unwrap();
             let recv_name = ServiceName::new(PRODUCER_SEND).unwrap();
 
-            let services = zero_copy::Service::list().unwrap();
-            println!("\nCon - Services\n");
-            for service in services {
-                println!("\n{:#?}", &service);
-            }
+            IceoryxWrapper::print_services(false);
 
             let send_service = zero_copy::Service::new(&send_name).publish_subscribe().open().unwrap();
             let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().open().unwrap();
-            (send_service.publisher().create().unwrap(), recv_service.subscriber().create().unwrap())
-        };
+            IceoryxWrapper {
+                publisher: send_service.publisher().create().unwrap(),
+                subscriber: recv_service.subscriber().create().unwrap(),
+                publisher_service: send_service,
+                subscriber_service: recv_service,
+            }
+        }
+    }
 
-        IceoryxWrapper {
-            publisher,
-            subscriber,
+    pub fn print_services(x: bool) {
+        let services = zero_copy::Service::list().unwrap();
+        if x {
+            println!("\nProd - Services\n");
+        } else {
+            println!("\nCon - Services\n")
+        }
+        for service in services {
+            println!("\n{:#?}", &service);
         }
     }
 }
@@ -60,7 +74,9 @@ impl IceoryxRunner {
     pub fn new(start_child: bool) -> IceoryxRunner {
         // let start_child = false;
         let wrapper = IceoryxWrapper::new(true);
+        IceoryxWrapper::print_services(true);
         sleep(Duration::from_millis(1000));
+        IceoryxWrapper::print_services(true);
         let exe = crate::executable_path("iceoryx_consumer");
         let child_proc = if start_child {
             Some(

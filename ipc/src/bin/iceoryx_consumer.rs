@@ -1,6 +1,8 @@
+use ipc::iceoryx::IceoryxWrapper;
 
 fn main() {
     let wrapper = ipc::iceoryx::IceoryxWrapper::new(false);
+    IceoryxWrapper::print_services(false);
     loop {
         while let Some(recv_payload) = wrapper.subscriber.receive().unwrap() {
             if !recv_payload.eq(b"ping") {
