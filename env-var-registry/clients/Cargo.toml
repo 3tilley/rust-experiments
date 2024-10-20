@@ -1,0 +1,8 @@
+[package]
+name = "clients"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env-vars = { version = "0.1.0", path = "../env_vars" }
+inventory = "0.3.15"
