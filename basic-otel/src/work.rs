@@ -1,5 +1,5 @@
 use tracing::{error, event, info_span, instrument, span, Level};
-use opentelemetry_api::{global, KeyValue};
+use opentelemetry::{global, KeyValue};
 use std::thread;
 use std::time::Duration;
 

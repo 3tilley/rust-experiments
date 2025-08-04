@@ -1,28 +1,30 @@
-use opentelemetry::{global, KeyValue, runtime};
+use opentelemetry::{global, KeyValue};
 use std::{error::Error, thread, time::Duration};
-use std::sync::Mutex;
-use opentelemetry::sdk::metrics::{MeterProvider, PeriodicReader};
-use opentelemetry::sdk::Resource;
-use opentelemetry_sdk::metrics::data::ResourceMetrics;
-use opentelemetry_sdk::metrics::{ManualReader, Pipeline};
-use opentelemetry_sdk::metrics::reader::MetricReader;
+use std::sync::{Arc, Mutex, Weak};
+// use opentelemetry_sdk::
+use opentelemetry_sdk::metrics::data::{ResourceMetrics, Temporality};
+use opentelemetry_sdk::metrics::{Aggregation, InstrumentKind, ManualReader, MeterProvider, PeriodicReader, Pipeline};
+use opentelemetry_sdk::metrics::reader::{AggregationSelector, MetricReader, TemporalitySelector};
+use opentelemetry_sdk::{Resource, runtime};
 use tracing::{Instrument, span, trace, warn};
 use tracing_subscriber::prelude::*;
 
 mod work;
 
 fn init_meter_provider() -> MeterProvider {
-    let exporter = opentelemetry_stdout::MetricsExporterBuilder::default()
-        // uncomment the below lines to pretty print output.
-        //  .with_encoder(|writer, data|
-        //    Ok(serde_json::to_writer_pretty(writer, &data).unwrap()))
-        .build();
+    // let exporter = opentelemetry_stdout::MetricsExporterBuilder::default()
+    //     // uncomment the below lines to pretty print output.
+    //     //  .with_encoder(|writer, data|
+    //     //    Ok(serde_json::to_writer_pretty(writer, &data).unwrap()))
+    //     .build();
+    // let reader = PeriodicReader::builder(exporter, runtime::Tokio).build();
 
-    let reader = PeriodicReader::builder(exporter, runtime::Tokio).build();
+    let exporter = opentelemetry_sdk::testing::metrics::in_memory_exporter::InMemoryMetricsExporterBuilder::new();
 
-    // let reader = opentelemetry::sdk::metrics::ManualReader::builder().build();
+    let reader = opentelemetry_sdk::metrics::ManualReader::builder();
+    let out_reader = reader.build();
     MeterProvider::builder()
-        .with_reader(reader)
+        .with_reader(out_reader)
         .with_resource(Resource::new(vec![KeyValue::new(
             "service.name",
             "metrics-basic-example",
@@ -30,27 +32,78 @@ fn init_meter_provider() -> MeterProvider {
         .build()
 }
 
-// fn init_manual_reader() -> (ManualReader, MeterProvider) {
-//     let reader = ManualReader::builder().build();
-//     let pipeline = opentelemetry_sdk::metrics::pipeline::Pipeline
-//     let provider = MeterProvider::builder()
-//         .with_reader(&reader)
-//         .with_resource(Resource::new(vec![KeyValue::new(
-//             "service.name",
-//             "metrics-basic-example",
-//         )]))
-//         .build();
-//     (reader, provider)
-// }
+#[derive(Debug)]
+pub struct MyExporter {
+    reader: Arc<ManualReader>,
+}
 
-fn read_manually(reader: ManualReader) {
+impl TemporalitySelector for MyExporter {
+    /// Note: Prometheus only supports cumulative temporality so this will always be
+    /// [Temporality::Cumulative].
+    fn temporality(&self, kind: InstrumentKind) -> Temporality {
+        self.reader.temporality(kind)
+    }
+}
+
+impl AggregationSelector for MyExporter {
+    fn aggregation(&self, kind: InstrumentKind) -> Aggregation {
+        self.reader.aggregation(kind)
+    }
+}
+impl MetricReader for MyExporter {
+    fn register_pipeline(&self, pipeline: Weak<Pipeline>) {
+        self.reader.register_pipeline(pipeline)
+    }
+
+    fn collect(&self, rm: &mut ResourceMetrics) -> opentelemetry::metrics::Result<()> {
+        self.reader.collect(rm)
+    }
+
+    fn force_flush(&self) -> opentelemetry::metrics::Result<()> {
+        self.reader.force_flush()
+    }
+
+    fn shutdown(&self) -> opentelemetry::metrics::Result<()> {
+        self.reader.shutdown()
+    }
+}
+
+fn init_manual_reader() -> (Arc<ManualReader>, MeterProvider) {
+    let reader = Arc::new(ManualReader::builder().build());
+    let exporter = MyExporter { reader: Arc::clone(&reader) };
+    // let pipeline = opentelemetry_sdk::metrics::pipeline::Pipeline
+    let provider = MeterProvider::builder()
+        .with_reader(exporter)
+        // .with_resource(Resource::new(vec![KeyValue::new(
+        //     "service.name",
+        //     "metrics-basic-example",
+        // )]))
+        .build();
+    (Arc::clone(&reader), provider)
+}
+
+fn read_manually(reader: &ManualReader) {
 
     let mut metrics = ResourceMetrics {
         resource: Resource::empty(),
         scope_metrics: vec![],
     };
     reader.collect(&mut metrics).expect("Unable to read metrics");
-    println!("{:?}", metrics);
+    println!("Resources: {:?}", metrics.resource.len());
+    for resource in metrics.resource.iter() {
+        println!("Resource: {:?}", resource);
+    }
+    println!("Scopes: {}", metrics.scope_metrics.len());
+
+    for scope in metrics.scope_metrics.iter() {
+        println!("Scope: {:?}", scope);
+
+        for inner_metrics in scope.metrics.iter() {
+            println!("Metrics: {:?}", inner_metrics);
+        }
+    }
+
+    println!("\n{:?}", metrics);
 }
 
 #[tokio::main]
@@ -66,8 +119,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         .with(tracing_subscriber::fmt::layer())
         .try_init()?;
 
-    // let (reader, provider) = init_manual_reader();
-    let provider = init_meter_provider();
+    let (reader, provider) = init_manual_reader();
+    // let provider = init_meter_provider();
     global::set_meter_provider(provider);
 
     {
@@ -87,7 +140,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     // method on all span processors. span processors should export remaining
     // spans before return.
     global::shutdown_tracer_provider();
-    // read_manually(reader);
+    let clone_reader = Arc::clone(&reader);
+    read_manually(&clone_reader);
     // provider.
 
     Ok(())

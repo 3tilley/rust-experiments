@@ -22,8 +22,8 @@ impl IceoryxWrapper {
         if is_producer {
             let send_name = ServiceName::new(PRODUCER_SEND).unwrap();
             let recv_name = ServiceName::new(CONSUMER_SEND).unwrap();
-            let send_service = zero_copy::Service::new(&send_name).publish_subscribe().open().unwrap();
-            let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().open().unwrap();
+            let send_service = zero_copy::Service::new(&send_name).publish_subscribe().open_or_create().unwrap();
+            let recv_service = zero_copy::Service::new(&recv_name).publish_subscribe().open_or_create().unwrap();
 
             Self::print_services(true);
 
